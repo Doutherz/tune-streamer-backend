@@ -1,0 +1,10 @@
+[package]
+name = "tune-streamer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tide = { version = "0.16.0" }
+async-std = { version = "1.12.0", features = ["attributes"] }
+serde = { version = "1.0", features = ["derive"] }
+rusqlite = {version = "0.27.0", features = ["bundled"] }
