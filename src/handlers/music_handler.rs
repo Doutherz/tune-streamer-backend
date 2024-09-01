@@ -7,6 +7,10 @@ use crate::services::music_service;
 struct SongPerams {
     id: String,
 }
+#[derive(serde::Deserialize)]
+struct QueryPerams {
+    q: String,
+}
 
 impl Default for SongPerams {
     fn default() -> Self {
@@ -18,14 +22,14 @@ impl Default for SongPerams {
 
 pub async fn play_song(req: Request<()>) -> Result<Response> {
     let song_perams: SongPerams = req.query()?;
-    let song = music_service::get_song(song_perams.id).await;
+    let song = music_service::get_song(song_perams.id.parse()?).await;
     let song = match song {
         Ok(song) => {song},
         Err(e) => {
             return Err(Error::from_str(StatusCode::NotFound, e));
         }
     };
-    let song = File::open(format!("./Tune-Streamer_music/{}", song.song_path)).await;
+    let song = File::open(format!("{}", song.song_path)).await;
 
     match song {
         Ok(mut file) => {
@@ -42,4 +46,51 @@ pub async fn play_song(req: Request<()>) -> Result<Response> {
             Err(Error::from_str(StatusCode::NotFound, format!("Song not found - {}", e)))
         }
     }
+}
+
+pub async fn get_song(req: Request<()>) -> Result<Response> {
+    let song_perams: SongPerams = req.query()?;
+    let song = music_service::get_song(song_perams.id.parse()?).await;
+    let song = match song {
+        Ok(song) => {song},
+        Err(e) => {
+            return Err(Error::from_str(StatusCode::NotFound, e));
+        }
+    };
+
+    Ok(Response::builder(StatusCode::Ok)
+        .body(tide::Body::from_json(&song)?)
+        .build()
+    )
+}
+
+pub async fn search_song(req: Request<()>) -> Result<Response> {
+    let song_perams:QueryPerams = req.query()?;
+    let songs = music_service::search_song(song_perams.q.as_str()).await;
+    let songs = match songs {
+        Ok(song) => {song},
+        Err(e) => {
+            return Err(Error::from_str(StatusCode::NotFound, e));
+        }
+    };
+
+    Ok(Response::builder(StatusCode::Ok)
+        .body(tide::Body::from_json(&songs)?)
+        .build()
+    )
+}
+
+pub async fn all_songs(_req: Request<()>) -> Result<Response> {
+    let songs = music_service::get_all_songs().await;
+    let songs = match songs {
+        Ok(song) => {song},
+        Err(e) => {
+            return Err(Error::from_str(StatusCode::NotFound, e));
+        }
+    };
+
+    Ok(Response::builder(StatusCode::Ok)
+        .body(tide::Body::from_json(&songs)?)
+        .build()
+    )
 }

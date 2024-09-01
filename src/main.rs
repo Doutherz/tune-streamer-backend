@@ -1,5 +1,7 @@
 use std::env;
 
+use utils::load_music::load_music;
+
 mod routes;
 mod handlers;
 mod services;
@@ -14,6 +16,15 @@ async fn main() -> tide::Result<()> {
     } else {
         ("0.0.0.0", "8080")
     };
+
+    if args.len() == 2 {
+        if args[1].as_str() == "reload" {
+            match load_music().await {
+                Ok(_) => println!("Music loaded successfully"),
+                Err(e) => println!("Music loader error: {}", e)
+            }
+        }   
+    }
 
     let mut app = tide::new();
 
