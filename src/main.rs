@@ -7,6 +7,7 @@ mod handlers;
 mod services;
 mod models;
 mod utils;
+mod middleware;
 
 #[async_std::main]
 async fn main() -> tide::Result<()> {

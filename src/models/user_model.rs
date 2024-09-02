@@ -6,5 +6,12 @@ pub struct User {
     pub username: String,
     pub password: String,
     pub salt: String,
-    pub session_token: String,
+    pub session_token: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct NewUser {
+    pub username: String,
+    pub password: String,
+    pub salt: String,
 }

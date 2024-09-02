@@ -1,10 +1,10 @@
 use tide::Server;
 
+use crate::handlers::user_handler;
+
 pub fn user_routes(app: &mut Server<()>) {
-    app.at("/").post(|_| async {
-        //create user
-        Ok("created user")
-    });
+
+    app.at("/").post(user_handler::add_user);
 
     app.at("/delete").post(|_| async {
         //check authenticated
@@ -12,10 +12,7 @@ pub fn user_routes(app: &mut Server<()>) {
         Ok("created user")
     });
 
-    app.at("/login").post(|_| async {
-        //user login
-        Ok("created user")
-    });
+    app.at("/login").post(user_handler::login);
 
     app.at("/logout").post(|_| async {
         //user logout
