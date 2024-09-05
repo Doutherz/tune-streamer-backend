@@ -1,6 +1,7 @@
 use tide::Server;
 mod user_route;
 mod song_route;
+mod playlist_route;
 //for routes
 pub fn routes(app: &mut Server<()>) {
     app.at("/api").nest({
@@ -18,12 +19,20 @@ pub fn routes(app: &mut Server<()>) {
             user_route
         });
 
-        api.at("/song").nest({
+        api.at("/music").nest({
             let mut song_route = tide::new();
 
             song_route::song_routes(&mut song_route);
 
             song_route
+        });
+
+        api.at("/playlists").nest({
+            let mut playlist_route = tide::new();
+
+            playlist_route::playlist_routes(&mut playlist_route);
+
+            playlist_route
         });
 
         api

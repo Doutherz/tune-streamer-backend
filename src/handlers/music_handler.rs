@@ -2,27 +2,17 @@ use tide::{Error, Request, Response, Result, StatusCode};
 use async_std::{fs::File, io::ReadExt};
 use crate::services::music_service;
 
-#[derive(serde::Deserialize)]
-#[serde(default)]
-struct SongPerams {
-    id: String,
-}
+
 #[derive(serde::Deserialize)]
 struct QueryPerams {
     q: String,
 }
 
-impl Default for SongPerams {
-    fn default() -> Self {
-        Self {
-            id: "".to_string(),
-        }
-    }
-}
+
 
 pub async fn play_song(req: Request<()>) -> Result<Response> {
-    let song_perams: SongPerams = req.query()?;
-    let song = music_service::get_song(song_perams.id.parse()?).await;
+    let song_id: &str = req.param("id")?;
+    let song = music_service::get_song(song_id.parse()?).await;
     let song = match song {
         Ok(song) => {song},
         Err(e) => {
@@ -49,8 +39,8 @@ pub async fn play_song(req: Request<()>) -> Result<Response> {
 }
 
 pub async fn get_song(req: Request<()>) -> Result<Response> {
-    let song_perams: SongPerams = req.query()?;
-    let song = music_service::get_song(song_perams.id.parse()?).await;
+    let song_id: &str = req.param("id")?;
+    let song = music_service::get_song(song_id.parse()?).await;
     let song = match song {
         Ok(song) => {song},
         Err(e) => {

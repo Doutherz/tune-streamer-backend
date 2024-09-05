@@ -1,6 +1,6 @@
 use tide::Server;
 
-use crate::handlers::user_handler;
+use crate::{handlers::user_handler, middleware::authentication};
 
 pub fn user_routes(app: &mut Server<()>) {
 
@@ -14,9 +14,5 @@ pub fn user_routes(app: &mut Server<()>) {
 
     app.at("/login").post(user_handler::login);
 
-    app.at("/logout").post(|_| async {
-        //user logout
-        //check is authenticated
-        Ok("created user")
-    });
+    app.at("/logout").with(authentication::is_auth).post(user_handler::logout);
 }

@@ -7,7 +7,7 @@ use crate::models::user_model::{NewUser, User};
 
 pub async fn username_taken(username: &str) -> Result<bool> {
     let conn = init_db()?;
-    let mut sql = conn.prepare("SELECT * FROM users WHERE username == ?")?;
+    let mut sql = conn.prepare("SELECT * FROM users WHERE username = ?")?;
 
     let mut user = sql.query_map([username], |row| {
         Ok(User {
@@ -52,9 +52,9 @@ pub fn gen_salt(len: usize) -> String {
 
 //true is password correct
 //false is password not correct
-pub fn authenticate(username: &str, password: &str) -> Result<bool> {
+pub async fn authenticate(username: &str, password: &str) -> Result<bool> {
     let conn = init_db()?;
-    let mut sql = conn.prepare("SELECT * FROM users WHERE username == ?")?;
+    let mut sql = conn.prepare("SELECT * FROM users WHERE username = ?")?;
 
     let mut user = sql.query_map([username], |row| {
         Ok(User {
@@ -74,7 +74,7 @@ pub fn authenticate(username: &str, password: &str) -> Result<bool> {
     Ok(bcrypt::verify(format!("{}{}", password, user.salt), &user.password))
 } 
 
-pub fn gen_token(username: &str) -> Result<String> {
+pub async fn gen_token(username: &str) -> Result<String> {
     let conn = init_db()?;
     let token = gen_salt(20);
     conn.execute(
@@ -83,4 +83,37 @@ pub fn gen_token(username: &str) -> Result<String> {
     )?;
 
     Ok(token)
+}
+
+pub async fn remove_token(token: &str) -> Result<()> {
+    let conn = init_db()?;
+    conn.execute(
+        "UPDATE users SET session_token = NULL WHERE session_token = ?1",
+        params![token],
+    )?;
+
+    Ok(())
+}
+
+
+pub async fn get_session_user(token: &str) -> Result<User>{
+    let conn = init_db()?;
+    let mut sql = conn.prepare("SELECT * FROM users WHERE session_token = ?")?;
+
+    let mut user = sql.query_map([token], |row| {
+        Ok(User {
+            id: row.get(0)?,
+            username: row.get(1)?,
+            password: row.get(2)?,
+            salt: row.get(3)?,
+            session_token: row.get(4)?,
+        })
+    })?;
+
+    let user = match user.next() {
+        Some(user) => Ok(user?),
+        None => Err(rusqlite::Error::QueryReturnedNoRows),
+    }?;
+
+    Ok(user)
 }
