@@ -2,7 +2,9 @@ use tide::{Error, Request, Response, Result, StatusCode};
 
 use crate::models::playlist_model::Playlist;
 use crate::services::user_service::{self, get_session_user};
-use crate::services::{self, playlist_service};
+use crate::services::{music_service, playlist_service};
+
+use super::music_handler::change_filepath_to_urlpath;
 
 #[derive(serde::Deserialize)]
 #[serde(default)]
@@ -37,8 +39,11 @@ pub async fn create_playlist(mut req: Request<()>) -> Result<Response> {
 
 pub async fn get_playlist_music(req: Request<()>) -> Result<Response> {
     //check if playlist is public or if its users playlist
+    let url = req.url().clone();
     let playlist: Playlist = get_playlist(req).await?.take_body().into_json().await?;
-    let music = playlist_service::get_playlist_music(playlist).await?;
+    let mut music = playlist_service::get_playlist_music(playlist).await?;
+
+    change_filepath_to_urlpath(&mut music, &url);
 
     let res = Response::builder(StatusCode::Ok)
         .body(tide::Body::from_json(&music)?)
@@ -47,8 +52,26 @@ pub async fn get_playlist_music(req: Request<()>) -> Result<Response> {
     Ok(res)
 }
 
-pub async fn add_music(mut req: Request<()>) -> Result<Response> {
-    todo!()
+pub async fn add_music(req: Request<()>) -> Result<Response> {
+    let playlist_id: u32 = req.param("id")?.parse()?;
+    let song_id: u32 = req.param("music_id")?.parse()?;
+
+    let token = match req.cookie("Session-Token") {
+        Some(token) => token,
+        None => return Err(Error::from_str(StatusCode::Unauthorized, "User not logged in"))
+    };
+
+    let user = user_service::get_session_user(token.value()).await?;
+    let song = music_service::get_song(song_id).await?;
+
+    let playlist = playlist_service::get_playlist(playlist_id).await?;
+
+    if playlist.user_id == user.id {
+        playlist_service::add_song(song, playlist).await?;
+        return Ok(Response::new(StatusCode::Created));
+    } else {
+        Err(Error::from_str(StatusCode::Unauthorized, "Playlist is not the users"))
+    }
 }
 
 pub async fn get_playlist(req: Request<()>) -> Result<Response> {

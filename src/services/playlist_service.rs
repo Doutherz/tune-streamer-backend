@@ -40,7 +40,7 @@ pub async fn get_playlist(playlist_id: u32) -> Result<Playlist> {
 
 pub async fn get_playlist_music(playlist: Playlist) -> Result<Vec<Music>> {
     let conn = init_db()?;
-    let mut sql = conn.prepare("SELECT * FROM playlists_songs INNER JOIN music ON playlists_songs.song_id = music.id WHERE playlist_id = ?")?;
+    let mut sql = conn.prepare("SELECT music.id, song_path, title, artist, genre, duration FROM playlists_songs INNER JOIN music ON playlists_songs.song_id = music.id WHERE playlist_id = ?")?;
 
     let songs = sql.query_map([playlist.id], |row| {
         Ok(Music {
@@ -57,7 +57,9 @@ pub async fn get_playlist_music(playlist: Playlist) -> Result<Vec<Music>> {
     let mut music = Vec::new();
 
     for song in songs {
-        music.push(song?);
+        let mut song = song?;
+        song.song_path = format!("{}", song.id);
+        music.push(song);
     }
 
     Ok(music)
