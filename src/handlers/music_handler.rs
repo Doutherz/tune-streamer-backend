@@ -1,5 +1,5 @@
 use tide::{http::Url, Error, Request, Response, Result, StatusCode};
-use async_std::{fs::File, io::ReadExt};
+use async_std::{fs::File, io::{prelude::SeekExt, ReadExt, SeekFrom}};
 use crate::{models::music_model::Music, services::music_service};
 
 
@@ -8,7 +8,19 @@ struct QueryPerams {
     q: String,
 }
 
+fn parse_range(range: &str) -> Result<(u32, u32)> {
+    if !range.starts_with("bytes=") {
+        return Err(Error::from_str(StatusCode::InternalServerError, "header range error"));
+    }
 
+    let range = range.trim_start_matches("bytes=");
+    let start_end: Vec<&str> = range.split('-').collect();
+
+    let start = start_end[0].parse::<u32>().unwrap_or(0);
+    let end = start_end[1].parse::<u32>().unwrap_or(0);
+
+    Ok((start, end))
+}
 
 pub async fn play_song(req: Request<()>) -> Result<Response> {
     let song_id: &str = req.param("id")?;
@@ -21,14 +33,17 @@ pub async fn play_song(req: Request<()>) -> Result<Response> {
     };
     let song = File::open(format!("{}", song.song_path)).await;
 
+
     match song {
         Ok(mut file) => {
+            
             let mut contents = vec![];
             if let Err(e) = file.read_to_end(&mut contents).await {
                 return Err(Error::from_str(StatusCode::NotFound, format!("Failed to read file - {}", e)));
             }
             Ok(Response::builder(StatusCode::Ok)
                 .header("Content-Type","audio/mpeg")
+                .header("Access-Control-Allow-Origin", "*")
                 .body(contents)
                 .build())
         }

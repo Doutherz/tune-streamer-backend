@@ -54,7 +54,7 @@ pub async fn get_all_songs() -> Result<Vec<Music>>{
 pub async fn search_song(query: &str) -> Result<Vec<Music>>{
     let query = format!("%{}%", query);
     let conn = init_db()?;
-    let mut sql = conn.prepare("SELECT * FROM music WHERE title LIKE ?")?;
+    let mut sql = conn.prepare("SELECT * FROM music WHERE title LIKE ?1 OR artist LIKE ?1")?;
 
     let songs = sql.query_map([query], |row| {
         Ok(Music {
