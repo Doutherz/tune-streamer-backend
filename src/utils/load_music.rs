@@ -5,6 +5,7 @@ use crate::models::music_model::Music;
 use crate::services::music_service::add_song;
 use crate::services::music_service::remove_all_songs;
 
+//!! need to update playlists if songs have been removed !!
 pub async fn load_music() -> Result<(), Box<dyn std::error::Error>>{
     let path = "./Tune-Streamer_music";
 
@@ -12,18 +13,21 @@ pub async fn load_music() -> Result<(), Box<dyn std::error::Error>>{
         Ok(_) => {},
         Err(e) => return Err(e.into())
     }
-
+    
     for entry in fs::read_dir(path)? {
         let entry = entry?;
         if let Some(path) =  entry.path().to_str(){
             println!("{}", path);
             let music = get_music_properties(path)?;
-            
+            //!! check if title already exists !!
             add_song(music).await?;
         } else {
             return Err("Invalid sequence in file path".into());
         }
     }
+
+    //update playlists to remove anysongs that have not been reimported, 
+    //song ids might be change so every song is in a playlists will have to be check 
 
     Ok(())
 }
