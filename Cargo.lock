@@ -1946,7 +1946,9 @@ name = "tune-streamer"
 version = "0.1.0"
 dependencies = [
  "async-std",
+ "femme",
  "lofty",
+ "once_cell",
  "pwhash",
  "rand 0.8.5",
  "rusqlite",

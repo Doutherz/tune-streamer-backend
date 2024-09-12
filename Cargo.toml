@@ -11,3 +11,5 @@ rusqlite = {version = "0.27.0", features = ["bundled"] }
 lofty = "0.11.0"
 pwhash = "1"
 rand = "0.8.5"
+femme = "2.2.1"
+once_cell = "1.19.0"

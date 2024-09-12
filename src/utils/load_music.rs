@@ -4,10 +4,11 @@ use lofty::{AudioFile, ItemKey};
 use crate::models::music_model::Music;
 use crate::services::music_service::add_song;
 use crate::services::music_service::remove_all_songs;
+use crate::MUSICDATA_URL;
 
-//!! need to update playlists if songs have been removed !!
+// !! need to update playlists if songs have been removed !!
 pub async fn load_music() -> Result<(), Box<dyn std::error::Error>>{
-    let path = "./Tune-Streamer_music";
+    let path = *MUSICDATA_URL;
 
     match remove_all_songs().await {
         Ok(_) => {},
@@ -19,7 +20,7 @@ pub async fn load_music() -> Result<(), Box<dyn std::error::Error>>{
         if let Some(path) =  entry.path().to_str(){
             println!("{}", path);
             let music = get_music_properties(path)?;
-            //!! check if title already exists !!
+            // !! check if title already exists !!
             add_song(music).await?;
         } else {
             return Err("Invalid sequence in file path".into());

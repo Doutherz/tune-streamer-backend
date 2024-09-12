@@ -1,6 +1,7 @@
 use std::env;
-
+use tide::{log, Error, StatusCode};
 use utils::load_music::load_music;
+use once_cell::sync::Lazy;
 
 mod routes;
 mod handlers;
@@ -9,32 +10,50 @@ mod models;
 mod utils;
 mod middleware;
 
+pub static DATABASE_URL: Lazy<&'static str> = Lazy::new(|| {
+    match env::var("DATABASE_URL") {
+        Ok(value) => Box::leak(value.into_boxed_str()),
+        Err(_) => "./db/database.db",
+    }
+});
+
+pub static MUSICDATA_URL: Lazy<&'static str> = Lazy::new(|| {
+    match env::var("MUSICDATA_URL") {
+        Ok(value) => Box::leak(value.into_boxed_str()),
+        Err(_) => "./Tune-Streamer_music",
+    }
+});
+
+pub static IP: Lazy<&'static str> = Lazy::new(|| {
+    match env::var("IP") {
+        Ok(value) => Box::leak(value.into_boxed_str()),
+        Err(_) => "0.0.0.0",
+    }
+});
+
+pub static PORT: Lazy<&'static str> = Lazy::new(|| {
+    match env::var("PORT") {
+        Ok(value) => Box::leak(value.into_boxed_str()),
+        Err(_) => "8080",
+    }
+});
+
+
+
 #[async_std::main]
 async fn main() -> tide::Result<()> {
-    let args: Vec<String> = env::args().collect();
-    let (ip, port) = if args.len() > 2 {
-        (args[1].as_str(), args[2].as_str())
-    } else {
-        ("0.0.0.0", "8080")
-    };
-
-    if args.len() == 2 {
-        if args[1].as_str() == "reload" {
-            match load_music().await {
-                Ok(_) => println!("Music loaded successfully"),
-                Err(e) => println!("Music loader error: {}", e)
-            }
-        }   
-    }
+    femme::start();
 
     let mut app = tide::new();
 
     routes::routes(&mut app);
 
-    utils::error::handle_errors(&mut app);
+    utils::logging::handle_logging(&mut app);
 
-    println!("Running on: {}:{}", ip, port);
-    app.listen(format!("{}:{}", ip, port)).await?;
+    load_music().await.unwrap_or_else(|err| log::error!("{}",err));
+
+    println!("Running on: {}:{}", *IP, *PORT);
+    app.listen(format!("{}:{}", *IP,  *PORT)).await?;
     
 
     Ok(())
