@@ -1,5 +1,7 @@
 use std::env;
-use tide::{log, Error, StatusCode};
+use tide::http::headers::HeaderValue;
+use tide::log;
+use tide::security::{CorsMiddleware, Origin};
 use utils::load_music::load_music;
 use once_cell::sync::Lazy;
 
@@ -27,7 +29,7 @@ pub static MUSICDATA_URL: Lazy<&'static str> = Lazy::new(|| {
 pub static IP: Lazy<&'static str> = Lazy::new(|| {
     match env::var("IP") {
         Ok(value) => Box::leak(value.into_boxed_str()),
-        Err(_) => "0.0.0.0",
+        Err(_) => "localhost",
     }
 });
 
@@ -35,6 +37,13 @@ pub static PORT: Lazy<&'static str> = Lazy::new(|| {
     match env::var("PORT") {
         Ok(value) => Box::leak(value.into_boxed_str()),
         Err(_) => "8080",
+    }
+});
+
+pub static CORS: Lazy<&'static str> = Lazy::new(|| {
+    match env::var("CORS") {
+        Ok(value) => Box::leak(value.into_boxed_str()),
+        Err(_) => "http://localhost:5173",
     }
 });
 
@@ -48,12 +57,17 @@ async fn main() -> tide::Result<()> {
 
     routes::routes(&mut app);
 
-    utils::logging::handle_logging(&mut app);
+    let cors = CorsMiddleware::new()
+        .allow_origin(Origin::from(*CORS))
+        .allow_methods("GET, POST, DELETE".parse::<HeaderValue>()?)
+        .allow_credentials(true);
+
+    app.with(cors);
 
     load_music().await.unwrap_or_else(|err| log::error!("{}",err));
 
-    println!("Running on: {}:{}", *IP, *PORT);
-    app.listen(format!("{}:{}", *IP,  *PORT)).await?;
+    println!("Running on: {}:{}", "0.0.0.0", *PORT);
+    app.listen(format!("{}:{}", "0.0.0.0",  *PORT)).await?;
     
 
     Ok(())

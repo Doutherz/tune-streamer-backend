@@ -1,3 +1,4 @@
+// User sqlx next time its easier to go from using sqlite in development then changing to a real database in production
 use rusqlite::{Connection, Result};
 
 use crate::DATABASE_URL;
