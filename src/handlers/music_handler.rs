@@ -53,6 +53,10 @@ pub async fn play_song(req: Request<()>) -> Result<Response> {
     }
 }
 
+pub async fn play_song_partial(req: Request<()>) -> Result<Response> {
+    todo!()
+}
+
 //get song should not have local path to the mp3 file but instead have the path to the url song
 pub async fn get_song(req: Request<()>) -> Result<Response> {
     let song_id: &str = req.param("id")?;

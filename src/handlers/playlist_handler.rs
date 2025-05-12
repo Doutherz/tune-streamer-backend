@@ -41,7 +41,7 @@ pub async fn get_playlist_music(req: Request<()>) -> Result<Response> {
     //check if playlist is public or if its users playlist
     let url = req.url().clone();
     let playlist: Playlist = get_playlist(req).await?.take_body().into_json().await?;
-    let mut music = playlist_service::get_playlist_music(playlist).await?;
+    let mut music = playlist_service::get_playlist_music(&playlist).await?;
 
     change_filepath_to_urlpath(&mut music, &url);
 
@@ -67,8 +67,16 @@ pub async fn add_music(req: Request<()>) -> Result<Response> {
     let playlist = playlist_service::get_playlist(playlist_id).await?;
 
     if playlist.user_id == user.id {
-        playlist_service::add_song(song, playlist).await?;
-        return Ok(Response::new(StatusCode::Created));
+        let music = playlist_service::get_playlist_music(&playlist).await?;
+
+        if !music.iter().any(|playlist_song| playlist_song.id == song.id) {
+            playlist_service::add_song(song, playlist).await?;
+            return Ok(Response::new(StatusCode::Created));
+
+        } else {
+            return Err(Error::from_str(StatusCode::Conflict, "Song already in playlist"));
+        }
+        
     } else {
         Err(Error::from_str(StatusCode::Unauthorized, "Playlist is not the users"))
     }

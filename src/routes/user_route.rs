@@ -9,7 +9,7 @@ pub fn user_routes(app: &mut Server<()>) {
     app.at("/delete").post(|_| async {
         //check authenticated
         //remove user
-        Ok("created user")
+        Ok("Removed user")
     });
 
     app.at("/login").post(user_handler::login);

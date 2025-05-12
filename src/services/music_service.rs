@@ -109,3 +109,30 @@ pub async fn remove_all_songs() -> Result<()> {
 
     Ok(())
 }
+
+pub async fn remove_song(id: u32) -> Result<()> {
+    let conn = init_db()?;
+    conn.execute(
+        "DELETE FROM music WHERE id = ?",
+        params![id],
+    )?;
+
+    conn.execute(
+        "DELETE FROM playlists_songs WHERE song_id = ?",
+        params![id],
+    )?;
+
+    Ok(())
+}
+
+pub async fn if_music_path_exists(path: &str) -> Result<bool> {
+    let conn = init_db()?;
+
+    let mut sql = conn.prepare("SELECT song_path FROM music WHERE song_path = ?")?;
+
+    match sql.query_row([path], |_row| Ok(())) {
+        Ok(_) => Ok(true),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(false),
+        Err(e) => Err(e),
+    }
+}

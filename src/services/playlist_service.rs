@@ -38,7 +38,7 @@ pub async fn get_playlist(playlist_id: u32) -> Result<Playlist> {
     }
 }
 
-pub async fn get_playlist_music(playlist: Playlist) -> Result<Vec<Music>> {
+pub async fn get_playlist_music(playlist: &Playlist) -> Result<Vec<Music>> {
     let conn = init_db()?;
     let mut sql = conn.prepare("SELECT music.id, song_path, title, artist, genre, duration FROM playlists_songs INNER JOIN music ON playlists_songs.song_id = music.id WHERE playlist_id = ?")?;
 
@@ -119,6 +119,10 @@ pub async fn add_song(song: Music, playlist: Playlist) -> Result<()> {
     )?;
 
     Ok(())
+}
+
+pub async fn remove_song(song: Music, playlist: Playlist) -> Result<()> {
+    todo!()
 }
 
 pub async fn update_playlist(playlist: Playlist) -> Result<()> {
